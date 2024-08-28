@@ -1,3 +1,6 @@
-import fastify from 'fastify'
+import fastify from 'fastify';
+import { uploadController } from './controllers/upload';
 
-export const app = fastify()
+export const app = fastify();
+
+app.post('/upload', uploadController);

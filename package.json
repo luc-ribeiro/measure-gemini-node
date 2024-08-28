@@ -22,8 +22,10 @@
     "typescript-eslint": "8.3.0"
   },
   "dependencies": {
+    "@google/generative-ai": "0.17.1",
     "dotenv": "16.4.5",
     "fastify": "4.28.1",
+    "js-base64": "3.7.7",
     "zod": "3.23.8"
   }
 }
