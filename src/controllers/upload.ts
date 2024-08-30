@@ -23,9 +23,13 @@ export async function uploadController(
       imageBase64: image,
     });
 
-    await generateImageContentUseCase({
+    const imageGeneratedContent = await generateImageContentUseCase({
       uploadedImage,
     });
+
+    console.log('Uploaded Image => ', uploadedImage);
+    console.log('Image Generated Content => ', imageGeneratedContent);
+
     reply.send({ success: true, message: 'Image uploaded successfully' });
   } catch (error: any) {
     reply.status(500).send({ success: false, message: error.message });

@@ -9,23 +9,27 @@ interface GenerateImageContentUseCaseRequest {
 export async function generateImageContentUseCase({
   uploadedImage,
 }: GenerateImageContentUseCaseRequest) {
-  const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+  try {
+    const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-  });
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+    });
 
-  const result = await model.generateContent([
-    {
-      fileData: {
-        mimeType: uploadedImage.file.mimeType,
-        fileUri: uploadedImage.file.uri,
+    const result = await model.generateContent([
+      {
+        fileData: {
+          mimeType: uploadedImage.file.mimeType,
+          fileUri: uploadedImage.file.uri,
+        },
       },
-    },
-    {
-      text: 'Me informe o valor da medição a partir da foto do medidor.',
-    },
-  ]);
+      {
+        text: 'Me informe somente o valor numérico da medição a partir da foto do medidor.',
+      },
+    ]);
 
-  console.log(result.response.text());
+    return result.response.text();
+  } catch (error) {
+    throw new Error('Failed to generate image content' + error);
+  }
 }

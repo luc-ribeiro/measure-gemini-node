@@ -14,21 +14,28 @@ interface UploadFileUseCaseRequest {
 export async function uploadImageFileUseCase({
   imageBase64,
 }: UploadFileUseCaseRequest): Promise<UploadFileResponse> {
-  const fileManager = new GoogleAIFileManager(env.GEMINI_API_KEY);
+  try {
+    const fileManager = new GoogleAIFileManager(env.GEMINI_API_KEY);
 
-  const base64MimeType = getBase64MimeType(imageBase64);
+    const base64MimeType = getBase64MimeType(imageBase64);
 
-  if (!base64MimeType) {
-    throw new Error('Não foi possível determinar o tipo MIME da imagem.');
+    if (!base64MimeType) {
+      throw new Error('Não foi possível determinar o tipo MIME da imagem.');
+    }
+
+    const tempConvertedImage = convertBase64ToImage(imageBase64);
+
+    const uploadImageResponse = await fileManager.uploadFile(
+      tempConvertedImage,
+      {
+        mimeType: base64MimeType,
+      },
+    );
+
+    fs.unlinkSync(tempConvertedImage);
+
+    return uploadImageResponse;
+  } catch (error) {
+    throw new Error('Failed to upload image file' + error);
   }
-
-  const tempConvertedImage = convertBase64ToImage(imageBase64);
-
-  const uploadImageResponse = await fileManager.uploadFile(tempConvertedImage, {
-    mimeType: base64MimeType,
-  });
-
-  fs.unlinkSync(tempConvertedImage);
-
-  return uploadImageResponse;
 }
