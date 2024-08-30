@@ -9,5 +9,5 @@ services:
     environment:
       POSTGRES_USER: docker
       POSTGRES_PASSWORD: docker
-      POSTGRES_DB: apisolid
+      POSTGRES_DB: measure-gemini-node
       PGPORT: 5434

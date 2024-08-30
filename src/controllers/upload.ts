@@ -1,37 +1,78 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { Base64 } from 'js-base64';
-import { z } from 'zod';
-import { uploadImageFileUseCase } from '../use-cases/upload-image-file';
-import { generateImageContentUseCase } from '../use-cases/generate-image-content';
+import { FastifyReply, FastifyRequest } from 'fastify'
+import dayjs from 'dayjs'
+import { prisma } from '../lib/prisma'
+import { z } from 'zod'
+import fs from 'fs'
+
+import { uploadImageBase64ToGoogleUseCase } from '../use-cases/upload-image-base64-to-google'
+import { generateImageMeasureValueUseCase } from '../use-cases/generate-image-measure-value'
+import { createImageFileFromBase64 } from '../utils/create-image-file-from-base64'
+import { handleError } from '../errors/handle-errors'
 
 export async function uploadController(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
   const uploadBodySchema = z.object({
-    image: z.string(),
-    customer_code: z.string(),
+    image: z.string().base64(),
+    customer_code: z.string().uuid(),
     measure_datetime: z.string().datetime(),
     measure_type: z.enum(['WATER', 'GAS']),
-  });
+  })
 
   const { image, customer_code, measure_datetime, measure_type } =
-    uploadBodySchema.parse(request.body);
+    uploadBodySchema.parse(request.body)
+
+  const startOfMonth = dayjs(measure_datetime).startOf('month')
+  const endOfMonth = dayjs(measure_datetime).endOf('month')
+
+  const alreadyExistsMeasureType = await prisma.measure.findFirst({
+    where: {
+      customer_code,
+      type: measure_type,
+      measured_at: {
+        gte: startOfMonth.toDate(),
+        lt: endOfMonth.toDate(),
+      },
+    },
+  })
+
+  if (alreadyExistsMeasureType) {
+    return await reply.status(409).send({
+      error_code: 'DOUBLE_REPORT',
+      error_description: 'Leitura do mês já realizada',
+    })
+  }
+
+  const imageFilePath = createImageFileFromBase64({ base64Image: image })
 
   try {
-    const uploadedImage = await uploadImageFileUseCase({
-      imageBase64: image,
-    });
+    const uploadedImage = await uploadImageBase64ToGoogleUseCase({
+      imageFilePath,
+    })
 
-    const imageGeneratedContent = await generateImageContentUseCase({
+    const uploadedImageMeasureValue = await generateImageMeasureValueUseCase({
       uploadedImage,
-    });
+    })
 
-    console.log('Uploaded Image => ', uploadedImage);
-    console.log('Image Generated Content => ', imageGeneratedContent);
+    const measure = await prisma.measure.create({
+      data: {
+        value: Number(uploadedImageMeasureValue),
+        measured_at: new Date(measure_datetime),
+        type: measure_type,
+        image_url: uploadedImage.file.uri,
+        customer_code,
+      },
+    })
 
-    reply.send({ success: true, message: 'Image uploaded successfully' });
+    fs.unlinkSync(imageFilePath)
+
+    return reply.status(201).send({
+      image_url: measure.image_url,
+      measure_value: measure.value,
+      measure_uuid: measure.id,
+    })
   } catch (error: any) {
-    reply.status(500).send({ success: false, message: error.message });
+    return handleError(reply, error)
   }
 }
