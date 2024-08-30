@@ -6,6 +6,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node build/server.js",
     "build": "tsup src --out-dir build",
+    "start:migrate": "prisma migrate deploy && npm run start",
     "lint": "eslint --fix"
   },
   "author": "",

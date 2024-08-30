@@ -1,0 +1,8 @@
+node_modules
+build
+Dockerfile
+docker-compose.yml
+.git
+.dockerignore
+.gitignore
+eslint.*

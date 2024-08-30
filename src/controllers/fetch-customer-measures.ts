@@ -1,6 +1,6 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
-import { prisma } from '../lib/prisma';
+import { FastifyReply, FastifyRequest } from 'fastify'
+import { z } from 'zod'
+import { prisma } from '../lib/prisma'
 
 export async function fetchCustomerMeasuresController(
   request: FastifyRequest,
@@ -8,11 +8,11 @@ export async function fetchCustomerMeasuresController(
 ) {
   const fetchCustomerMeasuresParamsSchema = z.object({
     customer_code: z.string().uuid(),
-  });
+  })
 
   const validateMeasureType = (measureType: string) => {
-    return ['WATER', 'GAS'].includes(measureType.toUpperCase());
-  };
+    return ['WATER', 'GAS'].includes(measureType.toUpperCase())
+  }
 
   const fetchCustomerMeasuresQuerySchema = z.object({
     measure_type: z
@@ -24,32 +24,32 @@ export async function fetchCustomerMeasuresController(
         },
       })
       .optional(),
-  });
+  })
 
   const { customer_code } = fetchCustomerMeasuresParamsSchema.parse(
     request.params,
-  );
+  )
   const { measure_type } = fetchCustomerMeasuresQuerySchema.parse(
     request.query,
-  );
+  )
 
   const whereClause: any = {
     customer_code,
-  };
+  }
 
   if (measure_type) {
-    whereClause.type = measure_type.toUpperCase();
+    whereClause.type = measure_type.toUpperCase()
   }
 
   const customerMeasures = await prisma.measure.findMany({
     where: whereClause,
-  });
+  })
 
   if (customerMeasures.length === 0) {
     return reply.status(404).send({
       error_code: 'MEASURES_NOT_FOUND',
       error_description: 'Nenhuma leitura encontrada',
-    });
+    })
   }
 
   const mappedMeasures = customerMeasures.map(measure => ({
@@ -58,7 +58,7 @@ export async function fetchCustomerMeasuresController(
     measure_type: measure.type,
     has_confirmed: measure.has_confirmed,
     image_url: measure.image_url,
-  }));
+  }))
 
-  return reply.send({ customer_code, measures: mappedMeasures });
+  return reply.send({ customer_code, measures: mappedMeasures })
 }
