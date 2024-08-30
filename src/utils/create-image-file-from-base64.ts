@@ -8,17 +8,21 @@ interface CreateImageFileFromBase64Props {
 export function createImageFileFromBase64({
   base64Image,
 }: CreateImageFileFromBase64Props): string {
-  const buffer = Buffer.from(base64Image, 'base64')
+  try {
+    const buffer = Buffer.from(base64Image, 'base64')
 
-  const uploadsDir = path.join(__dirname, '..', 'uploads')
+    const uploadsDir = path.join(__dirname, '..', 'uploads')
 
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true })
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true })
+    }
+
+    const imageFilePath = path.join(uploadsDir, `temp-image-${Date.now()}.png`)
+
+    fs.writeFileSync(imageFilePath, buffer)
+
+    return imageFilePath
+  } catch (error) {
+    throw error
   }
-
-  const imageFilePath = path.join(uploadsDir, `temp-image-${Date.now()}.png`)
-
-  fs.writeFileSync(imageFilePath, buffer)
-
-  return imageFilePath
 }

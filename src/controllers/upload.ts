@@ -38,7 +38,7 @@ export async function uploadController(
   })
 
   if (alreadyExistsMeasureType) {
-    return await reply.status(409).send({
+    return reply.status(409).send({
       error_code: 'DOUBLE_REPORT',
       error_description: 'Leitura do mês já realizada',
     })
